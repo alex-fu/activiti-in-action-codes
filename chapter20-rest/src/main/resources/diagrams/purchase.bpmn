@@ -1,0 +1,290 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:activiti="http://activiti.org/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:omgdc="http://www.omg.org/spec/DD/20100524/DC" xmlns:omgdi="http://www.omg.org/spec/DD/20100524/DI" typeLanguage="http://www.w3.org/2001/XMLSchema" expressionLanguage="http://www.w3.org/1999/XPath" targetNamespace="http://www.activiti.org/test">
+  <process id="myProcess" name="My process" isExecutable="true" activiti:candidateStarterGroups="Inputer">
+    <startEvent id="startRequest" name="startRequest" activiti:initiator="inputer">
+      <extensionElements>
+        <activiti:formProperty id="tid" name="tid" type="long" required="true"></activiti:formProperty>
+      </extensionElements>
+    </startEvent>
+    <endEvent id="endevent1" name="End"></endEvent>
+    <userTask id="uConfirm" name="客户人申购确认" activiti:assignee="${inputer}" activiti:dueDate="${dueDate}">
+      <extensionElements>
+        <activiti:formProperty id="tid" name="tid" type="long" writable="false"></activiti:formProperty>
+        <activiti:formProperty id="confirm" name="confirm" type="boolean" required="true"></activiti:formProperty>
+        <activiti:formProperty id="proof" name="proof" type="string"></activiti:formProperty>
+      </extensionElements>
+    </userTask>
+    <sequenceFlow id="flow1" sourceRef="startRequest" targetRef="uConfirm"></sequenceFlow>
+    <exclusiveGateway id="exclusivegateway1" name="Exclusive Gateway"></exclusiveGateway>
+    <sequenceFlow id="flow2" sourceRef="uConfirm" targetRef="exclusivegateway1"></sequenceFlow>
+    <userTask id="uPostInstrument" name="寄送材料" activiti:assignee="${inputer}" activiti:dueDate="${dueDate}">
+      <extensionElements>
+        <activiti:formProperty id="postType" name="postType" type="string" required="true"></activiti:formProperty>
+        <activiti:formProperty id="postSerial" name="postSerial" type="string"></activiti:formProperty>
+        <activiti:formProperty id="postPerson" name="postPerson" type="string" required="true"></activiti:formProperty>
+      </extensionElements>
+    </userTask>
+    <sequenceFlow id="flow4" name="确认购买" sourceRef="exclusivegateway1" targetRef="uPostInstrument">
+      <conditionExpression xsi:type="tFormalExpression"><![CDATA[${confirm == false}]]></conditionExpression>
+    </sequenceFlow>
+    <dataObject id="dueDateConfirm" name="dueDateConfirm" itemSubjectRef="xsd:string">
+      <extensionElements>
+        <activiti:value>P1D</activiti:value>
+      </extensionElements>
+    </dataObject>
+    <dataObject id="dueDatePost" name="dueDatePost" itemSubjectRef="xsd:string">
+      <extensionElements>
+        <activiti:value>P2D</activiti:value>
+      </extensionElements>
+    </dataObject>
+    <sequenceFlow id="flow5" name="取消购买" sourceRef="exclusivegateway1" targetRef="endevent1">
+      <extensionElements>
+        <activiti:executionListener event="take" expression="${execution.setVariable('result', 'canceled')}"></activiti:executionListener>
+      </extensionElements>
+      <conditionExpression xsi:type="tFormalExpression"><![CDATA[${confirm == false}]]></conditionExpression>
+    </sequenceFlow>
+    <userTask id="uReceiveInstrument" name="回收材料" activiti:assignee="${inputer}" activiti:dueDate="${dueDate}">
+      <extensionElements>
+        <activiti:formProperty id="received" name="received" type="boolean" required="true"></activiti:formProperty>
+        <activiti:formProperty id="receiver" name="receiver" type="string"></activiti:formProperty>
+      </extensionElements>
+    </userTask>
+    <sequenceFlow id="flow6" sourceRef="uPostInstrument" targetRef="uReceiveInstrument"></sequenceFlow>
+    <userTask id="uVerify" name="审核材料" activiti:assignee="${inputer}" activiti:dueDate="${dueDate}">
+      <extensionElements>
+        <activiti:formProperty id="tid" name="tid" type="long" writable="false"></activiti:formProperty>
+        <activiti:formProperty id="pass" name="pass" type="boolean" required="true"></activiti:formProperty>
+        <activiti:formProperty id="reasonVerify" name="reasonVerify" type="string"></activiti:formProperty>
+      </extensionElements>
+    </userTask>
+    <sequenceFlow id="flow7" name="收回材料" sourceRef="exclusivegateway2" targetRef="uVerify">
+      <conditionExpression xsi:type="tFormalExpression"><![CDATA[${received == true}]]></conditionExpression>
+    </sequenceFlow>
+    <exclusiveGateway id="exclusivegateway2" name="Exclusive Gateway"></exclusiveGateway>
+    <sequenceFlow id="flow8" sourceRef="uReceiveInstrument" targetRef="exclusivegateway2"></sequenceFlow>
+    <sequenceFlow id="flow9" name="取消购买" sourceRef="exclusivegateway2" targetRef="endevent1">
+      <extensionElements>
+        <activiti:executionListener event="take" expression="${execution.setVariable('result', 'canceled')}"></activiti:executionListener>
+      </extensionElements>
+      <conditionExpression xsi:type="tFormalExpression"><![CDATA[${received == false}]]></conditionExpression>
+    </sequenceFlow>
+    <exclusiveGateway id="exclusivegateway3" name="Exclusive Gateway"></exclusiveGateway>
+    <sequenceFlow id="flow10" sourceRef="uVerify" targetRef="exclusivegateway3"></sequenceFlow>
+    <userTask id="uRefill" name="通知客户重填" activiti:assignee="${inputer}">
+      <extensionElements>
+        <activiti:formProperty id="refill" name="refill" type="boolean" required="true"></activiti:formProperty>
+        <activiti:formProperty id="proof2" name="proof2" type="string"></activiti:formProperty>
+      </extensionElements>
+    </userTask>
+    <sequenceFlow id="flow11" name="不通过" sourceRef="exclusivegateway3" targetRef="uRefill">
+      <conditionExpression xsi:type="tFormalExpression"><![CDATA[${pass == false}]]></conditionExpression>
+    </sequenceFlow>
+    <exclusiveGateway id="exclusivegateway4" name="Exclusive Gateway"></exclusiveGateway>
+    <sequenceFlow id="flow12" sourceRef="uRefill" targetRef="exclusivegateway4"></sequenceFlow>
+    <sequenceFlow id="flow13" name="客户重填" sourceRef="exclusivegateway4" targetRef="uReceiveInstrument">
+      <conditionExpression xsi:type="tFormalExpression"><![CDATA[${retry == true}]]></conditionExpression>
+    </sequenceFlow>
+    <userTask id="uReview" name="复核材料">
+      <extensionElements>
+        <activiti:formProperty id="tid" name="tid" type="long" writable="false"></activiti:formProperty>
+        <activiti:formProperty id="approve" name="approve" type="boolean" required="true"></activiti:formProperty>
+        <activiti:formProperty id="reasonReview" name="reasonReview" type="string"></activiti:formProperty>
+      </extensionElements>
+    </userTask>
+    <sequenceFlow id="flow14" name="通过" sourceRef="exclusivegateway3" targetRef="uReview">
+      <conditionExpression xsi:type="tFormalExpression"><![CDATA[${pass == true}]]></conditionExpression>
+    </sequenceFlow>
+    <sequenceFlow id="flow15" name="客户取消" sourceRef="exclusivegateway4" targetRef="endevent1">
+      <extensionElements>
+        <activiti:executionListener event="take" expression="${execution.setVariable('result', 'canceled')}"></activiti:executionListener>
+      </extensionElements>
+      <conditionExpression xsi:type="tFormalExpression"><![CDATA[${retry == false}]]></conditionExpression>
+    </sequenceFlow>
+    <exclusiveGateway id="exclusivegateway5" name="Exclusive Gateway"></exclusiveGateway>
+    <sequenceFlow id="flow16" sourceRef="uReview" targetRef="exclusivegateway5"></sequenceFlow>
+    <userTask id="uEnterCoolStage" name="进入冷静期" activiti:assignee="${inputer}">
+      <extensionElements>
+        <activiti:formProperty id="tid" name="tid" type="long" writable="false"></activiti:formProperty>
+        <activiti:formProperty id="coolStageStartDate" name="coolStageStartDate" type="date" datePattern="YYYY-mm-dd HH:MM:SS" required="true"></activiti:formProperty>
+      </extensionElements>
+    </userTask>
+    <sequenceFlow id="flow17" name="通过" sourceRef="exclusivegateway5" targetRef="uEnterCoolStage">
+      <conditionExpression xsi:type="tFormalExpression"><![CDATA[${approve == true}]]></conditionExpression>
+    </sequenceFlow>
+    <userTask id="uReturnVisit" name="回访" activiti:assignee="${inputer}">
+      <extensionElements>
+        <activiti:formProperty id="tid" name="tid" type="long" writable="false"></activiti:formProperty>
+      </extensionElements>
+    </userTask>
+    <intermediateCatchEvent id="coolStageTimerCatchEvent" name="coolStageTimerCatchEvent">
+      <timerEventDefinition>
+        <timeDuration>PT24H</timeDuration>
+      </timerEventDefinition>
+    </intermediateCatchEvent>
+    <sequenceFlow id="flow18" sourceRef="uEnterCoolStage" targetRef="coolStageBoundaryTimer1"></sequenceFlow>
+    <sequenceFlow id="flow19" sourceRef="coolStageBoundaryTimer1" targetRef="uReturnVisit"></sequenceFlow>
+    <boundaryEvent id="cancelSignal" name="Signal" attachedToRef="uVerify" cancelActivity="true">
+      <extensionElements>
+        <activiti:executionListener event="start" expression="${execution.setVariable('result', 'canceled')}"></activiti:executionListener>
+      </extensionElements>
+      <signalEventDefinition></signalEventDefinition>
+    </boundaryEvent>
+    <sequenceFlow id="flow20" sourceRef="cancelSignal" targetRef="endevent1"></sequenceFlow>
+  </process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_myProcess">
+    <bpmndi:BPMNPlane bpmnElement="myProcess" id="BPMNPlane_myProcess">
+      <bpmndi:BPMNShape bpmnElement="startRequest" id="BPMNShape_startRequest">
+        <omgdc:Bounds height="35.0" width="35.0" x="60.0" y="30.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="endevent1" id="BPMNShape_endevent1">
+        <omgdc:Bounds height="35.0" width="35.0" x="600.0" y="30.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="uConfirm" id="BPMNShape_uConfirm">
+        <omgdc:Bounds height="55.0" width="105.0" x="160.0" y="20.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="exclusivegateway1" id="BPMNShape_exclusivegateway1">
+        <omgdc:Bounds height="40.0" width="40.0" x="310.0" y="27.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="uPostInstrument" id="BPMNShape_uPostInstrument">
+        <omgdc:Bounds height="55.0" width="105.0" x="278.0" y="120.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="uReceiveInstrument" id="BPMNShape_uReceiveInstrument">
+        <omgdc:Bounds height="55.0" width="105.0" x="278.0" y="220.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="uVerify" id="BPMNShape_uVerify">
+        <omgdc:Bounds height="55.0" width="105.0" x="428.0" y="311.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="cancelSignal" id="BPMNShape_cancelSignal">
+        <omgdc:Bounds height="30.0" width="30.0" x="515.0" y="300.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="exclusivegateway2" id="BPMNShape_exclusivegateway2">
+        <omgdc:Bounds height="40.0" width="40.0" x="460.0" y="227.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="exclusivegateway3" id="BPMNShape_exclusivegateway3">
+        <omgdc:Bounds height="40.0" width="40.0" x="460.0" y="431.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="uRefill" id="BPMNShape_uRefill">
+        <omgdc:Bounds height="55.0" width="105.0" x="278.0" y="424.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="exclusivegateway4" id="BPMNShape_exclusivegateway4">
+        <omgdc:Bounds height="40.0" width="40.0" x="310.0" y="360.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="uReview" id="BPMNShape_uReview">
+        <omgdc:Bounds height="55.0" width="105.0" x="428.0" y="516.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="exclusivegateway5" id="BPMNShape_exclusivegateway5">
+        <omgdc:Bounds height="40.0" width="40.0" x="700.0" y="523.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="uEnterCoolStage" id="BPMNShape_uEnterCoolStage">
+        <omgdc:Bounds height="55.0" width="105.0" x="428.0" y="640.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="uReturnVisit" id="BPMNShape_uReturnVisit">
+        <omgdc:Bounds height="55.0" width="105.0" x="428.0" y="800.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="coolStageTimerCatchEvent" id="BPMNShape_coolStageTimerCatchEvent">
+        <omgdc:Bounds height="35.0" width="35.0" x="463.0" y="730.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge bpmnElement="flow1" id="BPMNEdge_flow1">
+        <omgdi:waypoint x="95.0" y="47.0"></omgdi:waypoint>
+        <omgdi:waypoint x="160.0" y="47.0"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow2" id="BPMNEdge_flow2">
+        <omgdi:waypoint x="265.0" y="47.0"></omgdi:waypoint>
+        <omgdi:waypoint x="310.0" y="47.0"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow4" id="BPMNEdge_flow4">
+        <omgdi:waypoint x="330.0" y="67.0"></omgdi:waypoint>
+        <omgdi:waypoint x="330.0" y="120.0"></omgdi:waypoint>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds height="17.0" width="100.0" x="329.0" y="79.0"></omgdc:Bounds>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow5" id="BPMNEdge_flow5">
+        <omgdi:waypoint x="350.0" y="47.0"></omgdi:waypoint>
+        <omgdi:waypoint x="600.0" y="47.0"></omgdi:waypoint>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds height="17.0" width="100.0" x="430.0" y="30.0"></omgdc:Bounds>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow6" id="BPMNEdge_flow6">
+        <omgdi:waypoint x="330.0" y="175.0"></omgdi:waypoint>
+        <omgdi:waypoint x="330.0" y="220.0"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow7" id="BPMNEdge_flow7">
+        <omgdi:waypoint x="480.0" y="267.0"></omgdi:waypoint>
+        <omgdi:waypoint x="480.0" y="311.0"></omgdi:waypoint>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds height="14.0" width="100.0" x="480.0" y="279.0"></omgdc:Bounds>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow8" id="BPMNEdge_flow8">
+        <omgdi:waypoint x="383.0" y="247.0"></omgdi:waypoint>
+        <omgdi:waypoint x="460.0" y="247.0"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow9" id="BPMNEdge_flow9">
+        <omgdi:waypoint x="500.0" y="247.0"></omgdi:waypoint>
+        <omgdi:waypoint x="617.0" y="247.0"></omgdi:waypoint>
+        <omgdi:waypoint x="617.0" y="65.0"></omgdi:waypoint>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds height="17.0" width="100.0" x="531.0" y="247.0"></omgdc:Bounds>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow10" id="BPMNEdge_flow10">
+        <omgdi:waypoint x="480.0" y="366.0"></omgdi:waypoint>
+        <omgdi:waypoint x="480.0" y="431.0"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow11" id="BPMNEdge_flow11">
+        <omgdi:waypoint x="460.0" y="451.0"></omgdi:waypoint>
+        <omgdi:waypoint x="383.0" y="451.0"></omgdi:waypoint>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds height="17.0" width="100.0" x="416.0" y="454.0"></omgdc:Bounds>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow12" id="BPMNEdge_flow12">
+        <omgdi:waypoint x="330.0" y="424.0"></omgdi:waypoint>
+        <omgdi:waypoint x="330.0" y="400.0"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow13" id="BPMNEdge_flow13">
+        <omgdi:waypoint x="310.0" y="380.0"></omgdi:waypoint>
+        <omgdi:waypoint x="218.0" y="379.0"></omgdi:waypoint>
+        <omgdi:waypoint x="218.0" y="247.0"></omgdi:waypoint>
+        <omgdi:waypoint x="278.0" y="247.0"></omgdi:waypoint>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds height="17.0" width="100.0" x="232.0" y="380.0"></omgdc:Bounds>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow14" id="BPMNEdge_flow14">
+        <omgdi:waypoint x="480.0" y="471.0"></omgdi:waypoint>
+        <omgdi:waypoint x="480.0" y="516.0"></omgdi:waypoint>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds height="17.0" width="100.0" x="490.0" y="479.0"></omgdc:Bounds>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow15" id="BPMNEdge_flow15">
+        <omgdi:waypoint x="350.0" y="380.0"></omgdi:waypoint>
+        <omgdi:waypoint x="617.0" y="381.0"></omgdi:waypoint>
+        <omgdi:waypoint x="617.0" y="65.0"></omgdi:waypoint>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds height="17.0" width="100.0" x="361.0" y="379.0"></omgdc:Bounds>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow16" id="BPMNEdge_flow16">
+        <omgdi:waypoint x="533.0" y="543.0"></omgdi:waypoint>
+        <omgdi:waypoint x="700.0" y="543.0"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow17" id="BPMNEdge_flow17">
+        <omgdi:waypoint x="720.0" y="563.0"></omgdi:waypoint>
+        <omgdi:waypoint x="720.0" y="667.0"></omgdi:waypoint>
+        <omgdi:waypoint x="533.0" y="667.0"></omgdi:waypoint>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds height="17.0" width="100.0" x="720.0" y="579.0"></omgdc:Bounds>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow20" id="BPMNEdge_flow20">
+        <omgdi:waypoint x="545.0" y="315.0"></omgdi:waypoint>
+        <omgdi:waypoint x="617.0" y="314.0"></omgdi:waypoint>
+        <omgdi:waypoint x="617.0" y="65.0"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:activiti="http://activiti.org/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:omgdc="http://www.omg.org/spec/DD/20100524/DC" xmlns:omgdi="http://www.omg.org/spec/DD/20100524/DI" xmlns:tns="http://www.activiti.org/test" typeLanguage="http://www.w3.org/2001/XMLSchema" expressionLanguage="http://www.w3.org/1999/XPath" targetNamespace="http://www.heqiying.com" id="m1480475907207" name="">
+  <process id="reviewProcess" name="Review Process" isExecutable="true" activiti:candidateStarterGroups="Inputer" isClosed="false" processType="None">
+    <startEvent id="startRequest" name="startRequest" activiti:initiator="inputer">
+      <extensionElements>
+        <activiti:formProperty id="type" name="type" type="enum" required="true">
+          <activiti:value id="addInvestor" name="开户"></activiti:value>
+          <activiti:value id="changeInvestorInfo" name="修改投资人基本信息"></activiti:value>
+          <activiti:value id="addInvestorIdentifier" name="添加投资人身份信息"></activiti:value>
+          <activiti:value id="addInvestorRiskGradeInfo" name="添加投资人风险评估表"></activiti:value>
+          <activiti:value id="addInvestorBankInfo" name="添加投资人银行信息"></activiti:value>
+        </activiti:formProperty>
+        <activiti:formProperty id="tid" name="tid" type="long" required="true"></activiti:formProperty>
+        <activiti:formProperty id="dueDate" name="dueDate" type="string" default="P5D"></activiti:formProperty>
+      </extensionElements>
+    </startEvent>
+    <endEvent id="eAddInvestor" name="EndAddInvestor"></endEvent>
+    <userTask id="uReview" name="复核" activiti:candidateGroups="Reviewer" activiti:dueDate="${dueDate}">
+      <extensionElements>
+        <activiti:formProperty id="type" name="type" writable="false"></activiti:formProperty>
+        <activiti:formProperty id="tid" name="tid" type="long" writable="false"></activiti:formProperty>
+        <activiti:formProperty id="approve" name="approve" type="boolean" required="true"></activiti:formProperty>
+      </extensionElements>
+    </userTask>
+    <sequenceFlow id="flow2" sourceRef="uReview" targetRef="exclusivegateway1"></sequenceFlow>
+    <sequenceFlow id="flow1" name="请求" sourceRef="startRequest" targetRef="uReview"></sequenceFlow>
+    <exclusiveGateway id="exclusivegateway1" name="Exclusive Gateway"></exclusiveGateway>
+    <sequenceFlow id="flow4" name="通过" sourceRef="exclusivegateway1" targetRef="eAddInvestor">
+      <extensionElements>
+        <activiti:executionListener event="take" expression="${execution.setVariable('result', 'ok')}"></activiti:executionListener>
+      </extensionElements>
+      <conditionExpression xsi:type="tFormalExpression"><![CDATA[${approve == true}]]></conditionExpression>
+    </sequenceFlow>
+    <userTask id="changeRequest" name="修改请求" activiti:assignee="${inputer}">
+      <extensionElements>
+        <activiti:formProperty id="type" name="type" expression="${type}" writable="false"></activiti:formProperty>
+        <activiti:formProperty id="tid" name="tid" type="long"></activiti:formProperty>
+        <activiti:formProperty id="reApply" name="reApply" type="boolean" required="true"></activiti:formProperty>
+      </extensionElements>
+    </userTask>
+    <sequenceFlow id="flow3" name="有误" sourceRef="exclusivegateway1" targetRef="changeRequest">
+      <conditionExpression xsi:type="tFormalExpression"><![CDATA[${approve == false}]]></conditionExpression>
+    </sequenceFlow>
+    <exclusiveGateway id="exclusivegateway2" name="Exclusive Gateway"></exclusiveGateway>
+    <sequenceFlow id="flow5" sourceRef="changeRequest" targetRef="exclusivegateway2"></sequenceFlow>
+    <sequenceFlow id="flow6" name="重新请求添加" sourceRef="exclusivegateway2" targetRef="uReview">
+      <conditionExpression xsi:type="tFormalExpression"><![CDATA[${reApply == true}]]></conditionExpression>
+    </sequenceFlow>
+    <sequenceFlow id="flow7" name="取消添加" sourceRef="exclusivegateway2" targetRef="eAddInvestor">
+      <extensionElements>
+        <activiti:executionListener event="take" expression="${execution.setVariable('result', 'canceled')}"></activiti:executionListener>
+      </extensionElements>
+      <conditionExpression xsi:type="tFormalExpression"><![CDATA[${reApply == false}]]></conditionExpression>
+    </sequenceFlow>
+    <textAnnotation id="textannotation1">
+      <text>复核不通过时可以选择重新修改，或者取消添加</text>
+    </textAnnotation>
+    <association id="association1" sourceRef="textannotation1" targetRef="changeRequest"></association>
+  </process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_reviewProcess">
+    <bpmndi:BPMNPlane bpmnElement="reviewProcess" id="BPMNPlane_reviewProcess">
+      <bpmndi:BPMNShape bpmnElement="startRequest" id="BPMNShape_startRequest">
+        <omgdc:Bounds height="35.0" width="35.0" x="100.0" y="145.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="eAddInvestor" id="BPMNShape_eAddInvestor">
+        <omgdc:Bounds height="35.0" width="35.0" x="590.0" y="145.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="uReview" id="BPMNShape_uReview">
+        <omgdc:Bounds height="55.0" width="85.0" x="220.0" y="135.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="exclusivegateway1" id="BPMNShape_exclusivegateway1">
+        <omgdc:Bounds height="40.0" width="40.0" x="380.0" y="142.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="changeRequest" id="BPMNShape_changeRequest">
+        <omgdc:Bounds height="55.0" width="105.0" x="348.0" y="250.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="exclusivegateway2" id="BPMNShape_exclusivegateway2">
+        <omgdc:Bounds height="40.0" width="40.0" x="380.0" y="370.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="textannotation1" id="BPMNShape_textannotation1">
+        <omgdc:Bounds height="50.0" width="100.0" x="480.0" y="304.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge bpmnElement="flow2" id="BPMNEdge_flow2">
+        <omgdi:waypoint x="305.0" y="162.0"></omgdi:waypoint>
+        <omgdi:waypoint x="380.0" y="162.0"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow1" id="BPMNEdge_flow1">
+        <omgdi:waypoint x="135.0" y="162.0"></omgdi:waypoint>
+        <omgdi:waypoint x="220.0" y="162.0"></omgdi:waypoint>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds height="17.0" width="22.0" x="149.0" y="162.0"></omgdc:Bounds>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow4" id="BPMNEdge_flow4">
+        <omgdi:waypoint x="420.0" y="162.0"></omgdi:waypoint>
+        <omgdi:waypoint x="590.0" y="162.0"></omgdi:waypoint>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds height="17.0" width="22.0" x="434.0" y="162.0"></omgdc:Bounds>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow3" id="BPMNEdge_flow3">
+        <omgdi:waypoint x="400.0" y="182.0"></omgdi:waypoint>
+        <omgdi:waypoint x="400.0" y="250.0"></omgdi:waypoint>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds height="17.0" width="22.0" x="400.0" y="199.0"></omgdc:Bounds>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow5" id="BPMNEdge_flow5">
+        <omgdi:waypoint x="400.0" y="305.0"></omgdi:waypoint>
+        <omgdi:waypoint x="400.0" y="370.0"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow6" id="BPMNEdge_flow6">
+        <omgdi:waypoint x="380.0" y="390.0"></omgdi:waypoint>
+        <omgdi:waypoint x="262.0" y="389.0"></omgdi:waypoint>
+        <omgdi:waypoint x="262.0" y="190.0"></omgdi:waypoint>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds height="17.0" width="66.0" x="282.0" y="391.0"></omgdc:Bounds>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow7" id="BPMNEdge_flow7">
+        <omgdi:waypoint x="420.0" y="390.0"></omgdi:waypoint>
+        <omgdi:waypoint x="607.0" y="389.0"></omgdi:waypoint>
+        <omgdi:waypoint x="607.0" y="180.0"></omgdi:waypoint>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds height="14.0" width="44.0" x="434.0" y="391.0"></omgdc:Bounds>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="association1" id="BPMNEdge_association1">
+        <omgdi:waypoint x="480.0" y="329.0"></omgdi:waypoint>
+        <omgdi:waypoint x="400.0" y="305.0"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>
